@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
 import { MembersPanel } from './MembersPanel';
@@ -43,10 +43,54 @@ const messageSchema = z.object({
   })).optional()
 });
 
+const STORAGE_KEY = 'ai-tester-conversations';
+const ACTIVE_CONVERSATION_KEY = 'ai-tester-active-conversation';
+
 const ApiTester = () => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Cargar conversaciones desde localStorage al iniciar
+  useEffect(() => {
+    const savedConversations = localStorage.getItem(STORAGE_KEY);
+    const savedActiveConversation = localStorage.getItem(ACTIVE_CONVERSATION_KEY);
+    
+    if (savedConversations) {
+      try {
+        const parsed = JSON.parse(savedConversations);
+        // Convertir timestamps a Date objects
+        const conversationsWithDates = parsed.map((conv: any) => ({
+          ...conv,
+          messages: conv.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }))
+        }));
+        setConversations(conversationsWithDates);
+      } catch (error) {
+        console.error('Error parsing saved conversations:', error);
+      }
+    }
+    
+    if (savedActiveConversation) {
+      setActiveConversation(savedActiveConversation);
+    }
+  }, []);
+
+  // Guardar conversaciones en localStorage cuando cambien
+  useEffect(() => {
+    if (conversations.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    }
+  }, [conversations]);
+
+  // Guardar conversación activa en localStorage cuando cambie
+  useEffect(() => {
+    if (activeConversation) {
+      localStorage.setItem(ACTIVE_CONVERSATION_KEY, activeConversation);
+    }
+  }, [activeConversation]);
 
   const activeConversationData = conversations.find(c => c.id === activeConversation);
 
@@ -88,6 +132,89 @@ const ApiTester = () => {
           : conv
       )
     );
+  };
+
+  const renameConversation = (id: string, newTitle: string) => {
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === id 
+          ? { ...conv, title: newTitle }
+          : conv
+      )
+    );
+  };
+
+  const deleteConversation = (id: string) => {
+    setConversations(prev => prev.filter(conv => conv.id !== id));
+    if (activeConversation === id) {
+      const remaining = conversations.filter(conv => conv.id !== id);
+      setActiveConversation(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const exportToCurl = (conversation: ConversationData) => {
+    const { endpointSettings } = conversation;
+    const headers = Object.entries(endpointSettings.headers)
+      .map(([key, value]) => `-H "${key}: ${value}"`)
+      .join(' ');
+    
+    const queryParams = Object.entries(endpointSettings.queryParams)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&');
+    
+    const url = queryParams ? `${endpointSettings.url}?${queryParams}` : endpointSettings.url;
+    
+    let curlCommand = `curl -X ${endpointSettings.method} "${url}"`;
+    
+    if (headers) {
+      curlCommand += ` ${headers}`;
+    }
+    
+    if (endpointSettings.method !== 'GET' && endpointSettings.body) {
+      curlCommand += ` -d '${endpointSettings.body}'`;
+    }
+    
+    return curlCommand;
+  };
+
+  const importFromCurl = (curlCommand: string) => {
+    try {
+      // Parse básico de cURL command
+      const urlMatch = curlCommand.match(/curl\s+(?:-X\s+(\w+)\s+)?["']?([^"'\s]+)["']?/);
+      const methodMatch = curlCommand.match(/-X\s+(\w+)/);
+      const headerMatches = curlCommand.match(/-H\s+["']([^"']+)["']/g) || [];
+      const dataMatch = curlCommand.match(/-d\s+['"]([^'"]+)['"]/);
+      
+      if (!urlMatch || !urlMatch[2]) {
+        throw new Error('URL no encontrada en el comando cURL');
+      }
+      
+      const url = urlMatch[2];
+      const method = (methodMatch?.[1] || 'GET').toUpperCase() as EndpointSettings['method'];
+      
+      const headers: Record<string, string> = {};
+      headerMatches.forEach(headerMatch => {
+        const match = headerMatch.match(/-H\s+["']([^"']+)["']/);
+        if (match && match[1]) {
+          const [key, ...valueParts] = match[1].split(':');
+          if (key && valueParts.length > 0) {
+            headers[key.trim()] = valueParts.join(':').trim();
+          }
+        }
+      });
+      
+      const body = dataMatch?.[1] || (method !== 'GET' ? '{}' : '');
+      
+      return {
+        url,
+        method,
+        headers: Object.keys(headers).length > 0 ? headers : { 'Content-Type': 'application/json' },
+        queryParams: {},
+        body
+      };
+    } catch (error) {
+      throw new Error('Error parsing cURL command: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   };
 
   const sendMessage = async (content: string, attachments?: ChatMessage['attachments']) => {
@@ -179,6 +306,8 @@ const ApiTester = () => {
         activeConversation={activeConversation}
         onSelectConversation={(id) => setActiveConversation(id)}
         onCreateConversation={createNewConversation}
+        onRenameConversation={renameConversation}
+        onDeleteConversation={deleteConversation}
         conversations={conversations.map(conv => ({
           id: conv.id,
           title: conv.title,
@@ -218,6 +347,8 @@ const ApiTester = () => {
         <MembersPanel
           settings={activeConversationData.endpointSettings}
           onSettingsChange={updateConversationSettings}
+          onExportCurl={() => exportToCurl(activeConversationData)}
+          onImportCurl={importFromCurl}
         />
       )}
     </div>

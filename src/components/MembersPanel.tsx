@@ -8,19 +8,26 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Users, Settings, Plus, X, Code, Database } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Users, Settings, Plus, X, Code, Database, Download, Upload, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import type { EndpointSettings } from './ApiTester';
 
 interface MembersPanelProps {
   settings: EndpointSettings;
   onSettingsChange: (settings: EndpointSettings) => void;
+  onExportCurl: () => string;
+  onImportCurl: (curlCommand: string) => EndpointSettings;
 }
 
-export const MembersPanel = ({ settings, onSettingsChange }: MembersPanelProps) => {
+export const MembersPanel = ({ settings, onSettingsChange, onExportCurl, onImportCurl }: MembersPanelProps) => {
   const [newHeaderKey, setNewHeaderKey] = useState('');
   const [newHeaderValue, setNewHeaderValue] = useState('');
   const [newParamKey, setNewParamKey] = useState('');
   const [newParamValue, setNewParamValue] = useState('');
+  const [curlCommand, setCurlCommand] = useState('');
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const updateSettings = (updates: Partial<EndpointSettings>) => {
     onSettingsChange({ ...settings, ...updates });
@@ -54,6 +61,42 @@ export const MembersPanel = ({ settings, onSettingsChange }: MembersPanelProps) 
   const removeQueryParam = (key: string) => {
     const { [key]: removed, ...rest } = settings.queryParams;
     updateSettings({ queryParams: rest });
+  };
+
+  const handleExportCurl = async () => {
+    try {
+      const curl = onExportCurl();
+      await navigator.clipboard.writeText(curl);
+      toast({
+        title: "cURL exportado",
+        description: "El comando cURL se ha copiado al portapapeles",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo copiar el comando cURL",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImportCurl = () => {
+    try {
+      const newSettings = onImportCurl(curlCommand);
+      onSettingsChange(newSettings);
+      setCurlCommand('');
+      setIsImportDialogOpen(false);
+      toast({
+        title: "cURL importado",
+        description: "La configuración se ha actualizado desde el comando cURL",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al importar cURL",
+        variant: "destructive",
+      });
+    }
   };
 
   const members = [
@@ -111,10 +154,62 @@ export const MembersPanel = ({ settings, onSettingsChange }: MembersPanelProps) 
             <div className="p-4 space-y-6">
               {/* Basic Configuration */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Database className="w-4 h-4 text-primary" />
-                  Endpoint Configuration
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Database className="w-4 h-4 text-primary" />
+                    Endpoint Configuration
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleExportCurl}
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Export cURL
+                    </Button>
+                    <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-xs">
+                          <Upload className="w-3 h-3 mr-1" />
+                          Import cURL
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Importar comando cURL</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="curl-input">Comando cURL</Label>
+                            <Textarea
+                              id="curl-input"
+                              placeholder="curl -X POST https://api.ejemplo.com/endpoint -H &quot;Content-Type: application/json&quot; -d &quot;{message: test}&quot;"
+                              value={curlCommand}
+                              onChange={(e) => setCurlCommand(e.target.value)}
+                              className="min-h-[100px] font-mono text-xs"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setCurlCommand('');
+                                setIsImportDialogOpen(false);
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleImportCurl} disabled={!curlCommand.trim()}>
+                              Importar
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
                 
                 <div className="space-y-3">
                   <div className="space-y-2">

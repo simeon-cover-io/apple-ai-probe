@@ -3,8 +3,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Hash, Bot, Settings, Search } from 'lucide-react';
+import { Plus, Hash, Bot, Settings, Search, Edit2, Trash2, MoreVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import type { EndpointSettings } from './ApiTester';
 
 interface Conversation {
@@ -21,11 +24,22 @@ interface ConversationSidebarProps {
   activeConversation?: string;
   onSelectConversation: (id: string) => void;
   onCreateConversation: () => void;
+  onRenameConversation: (id: string, newTitle: string) => void;
+  onDeleteConversation: (id: string) => void;
   conversations: Conversation[];
 }
 
-export const ConversationSidebar = ({ activeConversation, onSelectConversation, onCreateConversation, conversations }: ConversationSidebarProps) => {
+export const ConversationSidebar = ({ 
+  activeConversation, 
+  onSelectConversation, 
+  onCreateConversation, 
+  onRenameConversation, 
+  onDeleteConversation, 
+  conversations 
+}: ConversationSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
 
   const filteredConversations = conversations.filter(conv =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -42,6 +56,24 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation, 
       body: ''
     };
     return conversations.find(c => c.id === id)?.endpointSettings || defaultSettings;
+  };
+
+  const handleRename = (id: string, title: string) => {
+    setEditingId(id);
+    setEditTitle(title);
+  };
+
+  const saveRename = () => {
+    if (editingId && editTitle.trim()) {
+      onRenameConversation(editingId, editTitle.trim());
+    }
+    setEditingId(null);
+    setEditTitle('');
+  };
+
+  const cancelRename = () => {
+    setEditingId(null);
+    setEditTitle('');
   };
 
   const formatTime = (date: Date) => {
@@ -117,23 +149,77 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation, 
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className={`font-medium truncate ${
-                        activeConversation === conversation.id 
-                          ? 'text-sidebar-text-active' 
-                          : 'text-foreground group-hover:text-foreground'
-                      }`}>
-                        {conversation.title}
-                      </h3>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {conversation.unread > 0 && (
-                          <Badge className="bg-destructive text-destructive-foreground text-xs px-2">
-                            {conversation.unread}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatTime(conversation.timestamp)}
-                        </span>
-                      </div>
+                      {editingId === conversation.id ? (
+                        <div className="flex-1 flex items-center gap-2">
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveRename();
+                              if (e.key === 'Escape') cancelRename();
+                            }}
+                            className="h-6 text-sm"
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" onClick={saveRename} className="h-6 w-6 p-0">
+                            ✓
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelRename} className="h-6 w-6 p-0">
+                            ✕
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className={`font-medium truncate ${
+                            activeConversation === conversation.id 
+                              ? 'text-sidebar-text-active' 
+                              : 'text-foreground group-hover:text-foreground'
+                          }`}>
+                            {conversation.title}
+                          </h3>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {conversation.unread > 0 && (
+                              <Badge className="bg-destructive text-destructive-foreground text-xs px-2">
+                                {conversation.unread}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {formatTime(conversation.timestamp)}
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="w-3 h-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRename(conversation.id, conversation.title);
+                                }}>
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Renombrar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteConversation(conversation.id);
+                                  }}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </>
+                      )}
                     </div>
                     
                     <p className={`text-sm truncate mb-1 ${
