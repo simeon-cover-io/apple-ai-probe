@@ -47,6 +47,27 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Apple-specific colors
+        apple: {
+          gray: {
+            1: "hsl(var(--apple-gray-1))",
+            2: "hsl(var(--apple-gray-2))",
+            3: "hsl(var(--apple-gray-3))",
+            4: "hsl(var(--apple-gray-4))",
+            5: "hsl(var(--apple-gray-5))",
+          },
+          blue: {
+            DEFAULT: "hsl(var(--apple-blue))",
+            light: "hsl(var(--apple-blue-light))",
+          },
+        },
+        chat: {
+          bubble: {
+            user: "hsl(var(--chat-bubble-user))",
+            assistant: "hsl(var(--chat-bubble-assistant))",
+          },
+          input: "hsl(var(--chat-input-bg))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -62,6 +83,19 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      backgroundImage: {
+        'gradient-apple': 'var(--gradient-apple)',
+        'gradient-subtle': 'var(--gradient-subtle)',
+      },
+      boxShadow: {
+        'apple': 'var(--shadow-apple)',
+        'card': 'var(--shadow-card)',
+        'elevated': 'var(--shadow-elevated)',
+      },
+      transitionTimingFunction: {
+        'smooth': 'var(--transition-smooth)',
+        'bounce': 'var(--transition-bounce)',
       },
       keyframes: {
         "accordion-down": {
