@@ -47,26 +47,27 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Apple-specific colors
-        apple: {
-          gray: {
-            1: "hsl(var(--apple-gray-1))",
-            2: "hsl(var(--apple-gray-2))",
-            3: "hsl(var(--apple-gray-3))",
-            4: "hsl(var(--apple-gray-4))",
-            5: "hsl(var(--apple-gray-5))",
-          },
-          blue: {
-            DEFAULT: "hsl(var(--apple-blue))",
-            light: "hsl(var(--apple-blue-light))",
-          },
+        // Dark theme specific colors
+        sidebar: {
+          bg: "hsl(var(--sidebar-bg))",
+          hover: "hsl(var(--sidebar-hover))",
+          active: "hsl(var(--sidebar-active))",
+          text: "hsl(var(--sidebar-text))",
+          "text-active": "hsl(var(--sidebar-text-active))",
         },
         chat: {
+          bg: "hsl(var(--chat-bg))",
+          header: "hsl(var(--chat-header))",
           bubble: {
             user: "hsl(var(--chat-bubble-user))",
             assistant: "hsl(var(--chat-bubble-assistant))",
           },
           input: "hsl(var(--chat-input-bg))",
+          "message-hover": "hsl(var(--chat-message-hover))",
+        },
+        members: {
+          bg: "hsl(var(--members-bg))",
+          hover: "hsl(var(--members-hover))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -85,13 +86,13 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        'gradient-apple': 'var(--gradient-apple)',
-        'gradient-subtle': 'var(--gradient-subtle)',
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-dark': 'var(--gradient-dark)',
       },
       boxShadow: {
-        'apple': 'var(--shadow-apple)',
-        'card': 'var(--shadow-card)',
+        'dark': 'var(--shadow-dark)',
         'elevated': 'var(--shadow-elevated)',
+        'glow': 'var(--shadow-glow)',
       },
       transitionTimingFunction: {
         'smooth': 'var(--transition-smooth)',

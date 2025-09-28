@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { EndpointConfig } from './EndpointConfig';
+import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
-import { Card } from '@/components/ui/card';
+import { MembersPanel } from './MembersPanel';
 
 export interface EndpointSettings {
   url: string;
@@ -24,6 +24,7 @@ export interface ChatMessage {
 }
 
 const ApiTester = () => {
+  const [activeConversation, setActiveConversation] = useState('1');
   const [endpointSettings, setEndpointSettings] = useState<EndpointSettings>({
     url: '',
     method: 'POST',
@@ -38,7 +39,7 @@ const ApiTester = () => {
     {
       id: '1',
       type: 'assistant',
-      content: '¡Hola! Soy tu agente de AI. Configura el endpoint en el panel izquierdo y envíame mensajes para probar la integración.',
+      content: '¡Hola! Soy tu agente de AI. Configura el endpoint en el panel derecho y envíame mensajes para probar la integración.',
       timestamp: new Date(),
     },
   ]);
@@ -85,15 +86,11 @@ const ApiTester = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Configuration Panel */}
-      <div className="w-1/3 border-r border-border bg-card">
-        <Card className="h-full rounded-none border-0 shadow-none">
-          <EndpointConfig
-            settings={endpointSettings}
-            onSettingsChange={setEndpointSettings}
-          />
-        </Card>
-      </div>
+      {/* Conversations Sidebar */}
+      <ConversationSidebar
+        activeConversation={activeConversation}
+        onSelectConversation={setActiveConversation}
+      />
 
       {/* Chat Panel */}
       <div className="flex-1 flex flex-col">
@@ -103,6 +100,12 @@ const ApiTester = () => {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Members Panel */}
+      <MembersPanel
+        settings={endpointSettings}
+        onSettingsChange={setEndpointSettings}
+      />
     </div>
   );
 };
