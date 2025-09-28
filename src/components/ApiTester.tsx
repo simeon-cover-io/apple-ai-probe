@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
 import { MembersPanel } from './MembersPanel';
+import { z } from 'zod';
 
 export interface EndpointSettings {
   url: string;
@@ -23,30 +24,190 @@ export interface ChatMessage {
   }[];
 }
 
+interface ConversationData {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  endpointSettings: EndpointSettings;
+}
+
+// Schema de validación para entrada de usuario
+const messageSchema = z.object({
+  content: z.string().trim().min(1, "El mensaje no puede estar vacío").max(5000, "El mensaje es demasiado largo"),
+  attachments: z.array(z.object({
+    type: z.enum(['image', 'audio']),
+    url: z.string().url(),
+    name: z.string().max(255)
+  })).optional()
+});
+
 const ApiTester = () => {
   const [activeConversation, setActiveConversation] = useState('1');
-  const [endpointSettings, setEndpointSettings] = useState<EndpointSettings>({
-    url: '',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    queryParams: {},
-    body: '',
-  });
-
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [conversations, setConversations] = useState<ConversationData[]>([
     {
       id: '1',
-      type: 'assistant',
-      content: '¡Hola! Soy tu agente de AI. Configura el endpoint en el panel derecho y envíame mensajes para probar la integración.',
-      timestamp: new Date(),
+      title: 'ChatGPT-4 API',
+      endpointSettings: {
+        url: 'https://api.openai.com/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer tu-api-key-aqui',
+        },
+        queryParams: {},
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "user",
+              content: "{{message}}"
+            }
+          ],
+          max_tokens: 1000
+        }, null, 2),
+      },
+      messages: [
+        {
+          id: '1',
+          type: 'assistant',
+          content: '¡Hola! Soy ChatGPT-4. Esta conversación está configurada para llamar a la API de OpenAI. Solo cambia tu API key en la configuración y estaré listo para responder.',
+          timestamp: new Date(),
+        },
+      ]
     },
+    {
+      id: '2',
+      title: 'Claude API',
+      endpointSettings: {
+        url: 'https://api.anthropic.com/v1/messages',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'tu-claude-key-aqui',
+          'anthropic-version': '2023-06-01',
+        },
+        queryParams: {},
+        body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: "{{message}}"
+            }
+          ]
+        }, null, 2),
+      },
+      messages: [
+        {
+          id: '1',
+          type: 'assistant',
+          content: '¡Hola! Soy Claude. Esta conversación está preconfigurada para Anthropic API. Agrega tu API key y podremos chatear.',
+          timestamp: new Date(),
+        },
+      ]
+    },
+    {
+      id: '3',
+      title: 'Webhook Personalizado',
+      endpointSettings: {
+        url: 'https://tu-endpoint.com/webhook',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer tu-token',
+        },
+        queryParams: {
+          'user_id': '123',
+          'session': 'abc'
+        },
+        body: JSON.stringify({
+          message: "{{message}}",
+          timestamp: "{{timestamp}}",
+          attachments: "{{attachments}}"
+        }, null, 2),
+      },
+      messages: [
+        {
+          id: '1',
+          type: 'assistant',
+          content: '¡Configuración de webhook lista! Solo cambia la URL por tu endpoint real y comenzaremos a enviar tus mensajes.',
+          timestamp: new Date(),
+        },
+      ]
+    }
   ]);
-
+  
   const [isLoading, setIsLoading] = useState(false);
 
+  const activeConversationData = conversations.find(c => c.id === activeConversation);
+
+  const createNewConversation = () => {
+    const newId = (conversations.length + 1).toString();
+    const newConversation: ConversationData = {
+      id: newId,
+      title: `Nueva Conversación ${newId}`,
+      endpointSettings: {
+        url: '',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        queryParams: {},
+        body: JSON.stringify({
+          message: "{{message}}",
+          timestamp: "{{timestamp}}"
+        }, null, 2),
+      },
+      messages: [
+        {
+          id: '1',
+          type: 'assistant',
+          content: '¡Nueva conversación creada! Configura tu endpoint en el panel derecho.',
+          timestamp: new Date(),
+        },
+      ]
+    };
+
+    setConversations(prev => [...prev, newConversation]);
+    setActiveConversation(newId);
+  };
+
+  const updateConversationSettings = (settings: EndpointSettings) => {
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === activeConversation 
+          ? { ...conv, endpointSettings: settings }
+          : conv
+      )
+    );
+  };
+
   const sendMessage = async (content: string, attachments?: ChatMessage['attachments']) => {
+    if (!activeConversationData) return;
+
+    // Validar entrada del usuario
+    try {
+      messageSchema.parse({ content, attachments });
+    } catch (error) {
+      console.error('Error de validación:', error);
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: 'Error: El mensaje contiene datos inválidos.',
+        timestamp: new Date(),
+      };
+      
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === activeConversation 
+            ? { ...conv, messages: [...conv.messages, errorMessage] }
+            : conv
+        )
+      );
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -55,12 +216,20 @@ const ApiTester = () => {
       attachments,
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    // Añadir mensaje del usuario
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === activeConversation 
+          ? { ...conv, messages: [...conv.messages, userMessage] }
+          : conv
+      )
+    );
+
     setIsLoading(true);
 
     try {
-      // Simulate API call - replace with actual endpoint call
-      const response = await simulateApiCall(endpointSettings, content, attachments);
+      // Llamada real al endpoint
+      const response = await callRealEndpoint(activeConversationData.endpointSettings, content, attachments);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -69,7 +238,13 @@ const ApiTester = () => {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === activeConversation 
+            ? { ...conv, messages: [...conv.messages, assistantMessage] }
+            : conv
+        )
+      );
     } catch (error) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -78,7 +253,13 @@ const ApiTester = () => {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === activeConversation 
+            ? { ...conv, messages: [...conv.messages, errorMessage] }
+            : conv
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -90,12 +271,13 @@ const ApiTester = () => {
       <ConversationSidebar
         activeConversation={activeConversation}
         onSelectConversation={setActiveConversation}
+        onCreateConversation={createNewConversation}
       />
 
       {/* Chat Panel */}
       <div className="flex-1 flex flex-col">
         <ChatInterface
-          messages={messages}
+          messages={activeConversationData?.messages || []}
           onSendMessage={sendMessage}
           isLoading={isLoading}
         />
@@ -103,39 +285,124 @@ const ApiTester = () => {
 
       {/* Members Panel */}
       <MembersPanel
-        settings={endpointSettings}
-        onSettingsChange={setEndpointSettings}
+        settings={activeConversationData?.endpointSettings || {
+          url: '',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          queryParams: {},
+          body: ''
+        }}
+        onSettingsChange={updateConversationSettings}
       />
     </div>
   );
 };
 
-// Simulate API call - replace with actual implementation
-const simulateApiCall = async (
+// Función para llamar al endpoint real
+const callRealEndpoint = async (
   settings: EndpointSettings,
   message: string,
   attachments?: ChatMessage['attachments']
 ): Promise<string> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
   if (!settings.url) {
     throw new Error('URL del endpoint no configurada');
   }
 
-  // Simulate different responses
-  const responses = [
-    'Perfecto, he recibido tu mensaje y procesado la información correctamente.',
-    'Interesante punto. Déjame analizar esto más a fondo...',
-    'Basándome en tu consulta, puedo sugerir las siguientes opciones.',
-    'He procesado tu solicitud. ¿Te gustaría que profundice en algún aspecto específico?',
-  ];
-
-  if (attachments && attachments.length > 0) {
-    return `He recibido tu mensaje junto con ${attachments.length} archivo(s). ${responses[Math.floor(Math.random() * responses.length)]}`;
+  // Validar URL
+  try {
+    new URL(settings.url);
+  } catch (error) {
+    throw new Error('URL del endpoint inválida');
   }
 
-  return responses[Math.floor(Math.random() * responses.length)];
+  // Preparar el body reemplazando placeholders
+  let requestBody = settings.body;
+  const timestamp = new Date().toISOString();
+  
+  // Reemplazar placeholders de forma segura
+  requestBody = requestBody
+    .replace(/\{\{message\}\}/g, JSON.stringify(message).slice(1, -1)) // Remove quotes from JSON.stringify
+    .replace(/\{\{timestamp\}\}/g, timestamp)
+    .replace(/\{\{attachments\}\}/g, JSON.stringify(attachments || []));
+
+  // Construir URL con query params
+  const url = new URL(settings.url);
+  Object.entries(settings.queryParams).forEach(([key, value]) => {
+    if (value) {
+      url.searchParams.append(encodeURIComponent(key), encodeURIComponent(value));
+    }
+  });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: settings.method,
+      headers: {
+        ...settings.headers,
+        // Asegurar que el Content-Type esté presente para POST/PUT/PATCH
+        ...(settings.method !== 'GET' && !settings.headers['Content-Type'] && {
+          'Content-Type': 'application/json'
+        })
+      },
+      body: settings.method !== 'GET' ? requestBody : undefined,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+    }
+
+    const responseData = await response.text();
+    
+    // Intentar parsear como JSON para extraer el mensaje de respuesta
+    try {
+      const jsonResponse = JSON.parse(responseData);
+      
+      // Para OpenAI API
+      if (jsonResponse.choices && jsonResponse.choices[0]?.message?.content) {
+        return jsonResponse.choices[0].message.content;
+      }
+      
+      // Para Claude API
+      if (jsonResponse.content && jsonResponse.content[0]?.text) {
+        return jsonResponse.content[0].text;
+      }
+      
+      // Para respuestas con campo 'message'
+      if (jsonResponse.message) {
+        return jsonResponse.message;
+      }
+      
+      // Para respuestas con campo 'response'
+      if (jsonResponse.response) {
+        return jsonResponse.response;
+      }
+      
+      // Retornar JSON formateado si no hay campo específico
+      return JSON.stringify(jsonResponse, null, 2);
+      
+    } catch (parseError) {
+      // Si no es JSON válido, retornar el texto tal como está
+      return responseData;
+    }
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout: El endpoint tardó demasiado en responder');
+      }
+      throw error;
+    }
+    
+    throw new Error('Error desconocido al llamar al endpoint');
+  }
 };
 
 export default ApiTester;

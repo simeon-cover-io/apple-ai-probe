@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Hash, Bot, Settings, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import type { EndpointSettings } from './ApiTester';
 
 interface Conversation {
   id: string;
@@ -13,39 +14,97 @@ interface Conversation {
   timestamp: Date;
   unread: number;
   type: 'ai-agent' | 'webhook';
+  endpointSettings: EndpointSettings;
 }
 
 interface ConversationSidebarProps {
   activeConversation?: string;
   onSelectConversation: (id: string) => void;
+  onCreateConversation: () => void;
 }
 
-export const ConversationSidebar = ({ activeConversation, onSelectConversation }: ConversationSidebarProps) => {
+export const ConversationSidebar = ({ activeConversation, onSelectConversation, onCreateConversation }: ConversationSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations] = useState<Conversation[]>([
     {
       id: '1',
-      title: 'AI Agent Test',
-      lastMessage: 'Perfecto, he recibido tu mensaje...',
+      title: 'ChatGPT-4 API',
+      lastMessage: 'Configuración lista para OpenAI',
       timestamp: new Date(),
       unread: 0,
-      type: 'ai-agent'
+      type: 'ai-agent',
+      endpointSettings: {
+        url: 'https://api.openai.com/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer tu-api-key-aqui',
+        },
+        queryParams: {},
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "user",
+              content: "{{message}}"
+            }
+          ],
+          max_tokens: 1000
+        }, null, 2),
+      }
     },
     {
       id: '2',
-      title: 'Webhook Testing',
-      lastMessage: 'Error: URL del endpoint no configurada',
+      title: 'Claude API',
+      lastMessage: 'Configuración para Anthropic',
       timestamp: new Date(Date.now() - 3600000),
-      unread: 2,
-      type: 'webhook'
+      unread: 0,
+      type: 'ai-agent',
+      endpointSettings: {
+        url: 'https://api.anthropic.com/v1/messages',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'tu-claude-key-aqui',
+          'anthropic-version': '2023-06-01',
+        },
+        queryParams: {},
+        body: JSON.stringify({
+          model: "claude-3-sonnet-20240229",
+          max_tokens: 1000,
+          messages: [
+            {
+              role: "user",
+              content: "{{message}}"
+            }
+          ]
+        }, null, 2),
+      }
     },
     {
       id: '3',
-      title: 'API Integration',
-      lastMessage: 'He procesado tu solicitud...',
+      title: 'Webhook Personalizado',
+      lastMessage: 'Listo para tu endpoint',
       timestamp: new Date(Date.now() - 7200000),
       unread: 0,
-      type: 'ai-agent'
+      type: 'webhook',
+      endpointSettings: {
+        url: 'https://tu-endpoint.com/webhook',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer tu-token',
+        },
+        queryParams: {
+          'user_id': '123',
+          'session': 'abc'
+        },
+        body: JSON.stringify({
+          message: "{{message}}",
+          timestamp: "{{timestamp}}",
+          attachments: "{{attachments}}"
+        }, null, 2),
+      }
     }
   ]);
 
@@ -53,6 +112,18 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation }
     conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Obtener la configuración del endpoint para mostrar en la vista previa
+  const getConversationSettings = (id: string): EndpointSettings => {
+    const defaultSettings: EndpointSettings = {
+      url: '',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      queryParams: {},
+      body: ''
+    };
+    return conversations.find(c => c.id === id)?.endpointSettings || defaultSettings;
+  };
 
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -70,7 +141,11 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation }
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-lg font-semibold text-foreground">Conversaciones</h1>
-          <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-glow">
+          <Button 
+            size="sm" 
+            className="bg-primary hover:bg-primary/90 shadow-glow"
+            onClick={onCreateConversation}
+          >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
@@ -135,13 +210,22 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation }
                     </div>
                   </div>
                   
-                  <p className={`text-sm truncate ${
+                  <p className={`text-sm truncate mb-1 ${
                     activeConversation === conversation.id 
                       ? 'text-sidebar-text-active/70' 
                       : 'text-muted-foreground'
                   }`}>
                     {conversation.lastMessage}
                   </p>
+
+                  {/* URL Preview */}
+                  {conversation.endpointSettings.url && (
+                    <div className="text-xs text-muted-foreground/60 truncate">
+                      <code className="bg-sidebar-bg px-1 rounded">
+                        {conversation.endpointSettings.method} {conversation.endpointSettings.url}
+                      </code>
+                    </div>
+                  )}
                 </div>
               </div>
             </button>
