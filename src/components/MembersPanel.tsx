@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Users, FileText, Settings, Plus, X, Code, Database } from 'lucide-react';
+import { Users, Settings, Plus, X, Code, Database } from 'lucide-react';
 import type { EndpointSettings } from './ApiTester';
 
 interface MembersPanelProps {
@@ -61,30 +61,17 @@ export const MembersPanel = ({ settings, onSettingsChange }: MembersPanelProps) 
     { id: '2', name: 'Webhook Handler', status: 'idle', role: 'Service' },
   ];
 
-  const files = [
-    { id: '1', name: 'config.json', size: '2.1 KB', type: 'json' },
-    { id: '2', name: 'sample_response.json', size: '1.8 KB', type: 'json' },
-    { id: '3', name: 'api_docs.md', size: '4.2 KB', type: 'markdown' },
-  ];
-
   return (
     <div className="w-80 bg-members-bg border-l border-border flex flex-col h-full">
       <Tabs defaultValue="members" className="flex-1 flex flex-col">
         <div className="border-b border-border">
-          <TabsList className="w-full grid grid-cols-3 rounded-none bg-transparent h-12">
+          <TabsList className="w-full grid grid-cols-2 rounded-none bg-transparent h-12">
             <TabsTrigger 
               value="members" 
               className="data-[state=active]:bg-sidebar-active data-[state=active]:text-sidebar-text-active"
             >
               <Users className="w-4 h-4 mr-1" />
               Miembros
-            </TabsTrigger>
-            <TabsTrigger 
-              value="files" 
-              className="data-[state=active]:bg-sidebar-active data-[state=active]:text-sidebar-text-active"
-            >
-              <FileText className="w-4 h-4 mr-1" />
-              Archivos
             </TabsTrigger>
             <TabsTrigger 
               value="config" 
@@ -110,31 +97,6 @@ export const MembersPanel = ({ settings, onSettingsChange }: MembersPanelProps) 
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">{member.name}</p>
                         <p className="text-xs text-muted-foreground">{member.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="files" className="flex-1 mt-0">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Archivos Recientes</h3>
-                <div className="space-y-2">
-                  {files.map((file) => (
-                    <div key={file.id} className="p-3 rounded-lg border border-border hover:bg-members-hover transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{file.size}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {file.type}
-                        </Badge>
                       </div>
                     </div>
                   ))}
