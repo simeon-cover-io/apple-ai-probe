@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
 import { MembersPanel } from './MembersPanel';
+import { Button } from '@/components/ui/button';
+import { Bot, Plus } from 'lucide-react';
 import { z } from 'zod';
 
 export interface EndpointSettings {
@@ -42,111 +44,17 @@ const messageSchema = z.object({
 });
 
 const ApiTester = () => {
-  const [activeConversation, setActiveConversation] = useState('1');
-  const [conversations, setConversations] = useState<ConversationData[]>([
-    {
-      id: '1',
-      title: 'ChatGPT-4 API',
-      endpointSettings: {
-        url: 'https://api.openai.com/v1/chat/completions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer tu-api-key-aqui',
-        },
-        queryParams: {},
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "user",
-              content: "{{message}}"
-            }
-          ],
-          max_tokens: 1000
-        }, null, 2),
-      },
-      messages: [
-        {
-          id: '1',
-          type: 'assistant',
-          content: '¡Hola! Soy ChatGPT-4. Esta conversación está configurada para llamar a la API de OpenAI. Solo cambia tu API key en la configuración y estaré listo para responder.',
-          timestamp: new Date(),
-        },
-      ]
-    },
-    {
-      id: '2',
-      title: 'Claude API',
-      endpointSettings: {
-        url: 'https://api.anthropic.com/v1/messages',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'tu-claude-key-aqui',
-          'anthropic-version': '2023-06-01',
-        },
-        queryParams: {},
-        body: JSON.stringify({
-          model: "claude-3-sonnet-20240229",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: "{{message}}"
-            }
-          ]
-        }, null, 2),
-      },
-      messages: [
-        {
-          id: '1',
-          type: 'assistant',
-          content: '¡Hola! Soy Claude. Esta conversación está preconfigurada para Anthropic API. Agrega tu API key y podremos chatear.',
-          timestamp: new Date(),
-        },
-      ]
-    },
-    {
-      id: '3',
-      title: 'Webhook Personalizado',
-      endpointSettings: {
-        url: 'https://tu-endpoint.com/webhook',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer tu-token',
-        },
-        queryParams: {
-          'user_id': '123',
-          'session': 'abc'
-        },
-        body: JSON.stringify({
-          message: "{{message}}",
-          timestamp: "{{timestamp}}",
-          attachments: "{{attachments}}"
-        }, null, 2),
-      },
-      messages: [
-        {
-          id: '1',
-          type: 'assistant',
-          content: '¡Configuración de webhook lista! Solo cambia la URL por tu endpoint real y comenzaremos a enviar tus mensajes.',
-          timestamp: new Date(),
-        },
-      ]
-    }
-  ]);
-  
+  const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const activeConversationData = conversations.find(c => c.id === activeConversation);
 
   const createNewConversation = () => {
-    const newId = (conversations.length + 1).toString();
+    const newId = Date.now().toString();
     const newConversation: ConversationData = {
       id: newId,
-      title: `Nueva Conversación ${newId}`,
+      title: `Conversación ${conversations.length + 1}`,
       endpointSettings: {
         url: '',
         method: 'POST',
@@ -155,15 +63,14 @@ const ApiTester = () => {
         },
         queryParams: {},
         body: JSON.stringify({
-          message: "{{message}}",
-          timestamp: "{{timestamp}}"
+          message: "{{message}}"
         }, null, 2),
       },
       messages: [
         {
           id: '1',
           type: 'assistant',
-          content: '¡Nueva conversación creada! Configura tu endpoint en el panel derecho.',
+          content: '¡Hola! Nueva conversación creada. Configura tu endpoint en el panel derecho y empezemos a chatear.',
           timestamp: new Date(),
         },
       ]
@@ -270,30 +177,49 @@ const ApiTester = () => {
       {/* Conversations Sidebar */}
       <ConversationSidebar
         activeConversation={activeConversation}
-        onSelectConversation={setActiveConversation}
+        onSelectConversation={(id) => setActiveConversation(id)}
         onCreateConversation={createNewConversation}
+        conversations={conversations.map(conv => ({
+          id: conv.id,
+          title: conv.title,
+          lastMessage: conv.messages[conv.messages.length - 1]?.content || 'Nueva conversación',
+          timestamp: conv.messages[conv.messages.length - 1]?.timestamp || new Date(),
+          unread: 0,
+          type: 'webhook' as const,
+          endpointSettings: conv.endpointSettings
+        }))}
       />
 
       {/* Chat Panel */}
       <div className="flex-1 flex flex-col">
-        <ChatInterface
-          messages={activeConversationData?.messages || []}
-          onSendMessage={sendMessage}
-          isLoading={isLoading}
-        />
+        {activeConversationData ? (
+          <ChatInterface
+            messages={activeConversationData.messages}
+            onSendMessage={sendMessage}
+            isLoading={isLoading}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-chat-bg">
+            <div className="text-center text-muted-foreground">
+              <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <h2 className="text-xl font-semibold mb-2">Bienvenido al AI Agent Tester</h2>
+              <p className="mb-4">Crea una nueva conversación para empezar</p>
+              <Button onClick={createNewConversation} className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Conversación
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Members Panel */}
-      <MembersPanel
-        settings={activeConversationData?.endpointSettings || {
-          url: '',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          queryParams: {},
-          body: ''
-        }}
-        onSettingsChange={updateConversationSettings}
-      />
+      {activeConversationData && (
+        <MembersPanel
+          settings={activeConversationData.endpointSettings}
+          onSettingsChange={updateConversationSettings}
+        />
+      )}
     </div>
   );
 };

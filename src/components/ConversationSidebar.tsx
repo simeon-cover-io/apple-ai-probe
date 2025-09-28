@@ -21,92 +21,11 @@ interface ConversationSidebarProps {
   activeConversation?: string;
   onSelectConversation: (id: string) => void;
   onCreateConversation: () => void;
+  conversations: Conversation[];
 }
 
-export const ConversationSidebar = ({ activeConversation, onSelectConversation, onCreateConversation }: ConversationSidebarProps) => {
+export const ConversationSidebar = ({ activeConversation, onSelectConversation, onCreateConversation, conversations }: ConversationSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [conversations] = useState<Conversation[]>([
-    {
-      id: '1',
-      title: 'ChatGPT-4 API',
-      lastMessage: 'Configuración lista para OpenAI',
-      timestamp: new Date(),
-      unread: 0,
-      type: 'ai-agent',
-      endpointSettings: {
-        url: 'https://api.openai.com/v1/chat/completions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer tu-api-key-aqui',
-        },
-        queryParams: {},
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "user",
-              content: "{{message}}"
-            }
-          ],
-          max_tokens: 1000
-        }, null, 2),
-      }
-    },
-    {
-      id: '2',
-      title: 'Claude API',
-      lastMessage: 'Configuración para Anthropic',
-      timestamp: new Date(Date.now() - 3600000),
-      unread: 0,
-      type: 'ai-agent',
-      endpointSettings: {
-        url: 'https://api.anthropic.com/v1/messages',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'tu-claude-key-aqui',
-          'anthropic-version': '2023-06-01',
-        },
-        queryParams: {},
-        body: JSON.stringify({
-          model: "claude-3-sonnet-20240229",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: "{{message}}"
-            }
-          ]
-        }, null, 2),
-      }
-    },
-    {
-      id: '3',
-      title: 'Webhook Personalizado',
-      lastMessage: 'Listo para tu endpoint',
-      timestamp: new Date(Date.now() - 7200000),
-      unread: 0,
-      type: 'webhook',
-      endpointSettings: {
-        url: 'https://tu-endpoint.com/webhook',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer tu-token',
-        },
-        queryParams: {
-          'user_id': '123',
-          'session': 'abc'
-        },
-        body: JSON.stringify({
-          message: "{{message}}",
-          timestamp: "{{timestamp}}",
-          attachments: "{{attachments}}"
-        }, null, 2),
-      }
-    }
-  ]);
 
   const filteredConversations = conversations.filter(conv =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,72 +83,80 @@ export const ConversationSidebar = ({ activeConversation, onSelectConversation, 
       {/* Conversations List */}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {filteredConversations.map((conversation) => (
-            <button
-              key={conversation.id}
-              onClick={() => onSelectConversation(conversation.id)}
-              className={`w-full p-3 rounded-lg text-left transition-all duration-200 group ${
-                activeConversation === conversation.id
-                  ? 'bg-sidebar-active text-sidebar-text-active shadow-glow'
-                  : 'hover:bg-sidebar-hover text-sidebar-text'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <Avatar className="w-10 h-10 flex-shrink-0">
-                  <AvatarFallback className={`${
-                    conversation.type === 'ai-agent' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}>
-                    {conversation.type === 'ai-agent' ? (
-                      <Bot className="w-5 h-5" />
-                    ) : (
-                      <Hash className="w-5 h-5" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className={`font-medium truncate ${
-                      activeConversation === conversation.id 
-                        ? 'text-sidebar-text-active' 
-                        : 'text-foreground group-hover:text-foreground'
+          {conversations.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm mb-2">No hay conversaciones</p>
+              <p className="text-xs">Haz clic en + para crear una nueva</p>
+            </div>
+          ) : (
+            filteredConversations.map((conversation) => (
+              <button
+                key={conversation.id}
+                onClick={() => onSelectConversation(conversation.id)}
+                className={`w-full p-3 rounded-lg text-left transition-all duration-200 group ${
+                  activeConversation === conversation.id
+                    ? 'bg-sidebar-active text-sidebar-text-active shadow-glow'
+                    : 'hover:bg-sidebar-hover text-sidebar-text'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Avatar className="w-10 h-10 flex-shrink-0">
+                    <AvatarFallback className={`${
+                      conversation.type === 'ai-agent' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-secondary text-secondary-foreground'
                     }`}>
-                      {conversation.title}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {conversation.unread > 0 && (
-                        <Badge className="bg-destructive text-destructive-foreground text-xs px-2">
-                          {conversation.unread}
-                        </Badge>
+                      {conversation.type === 'ai-agent' ? (
+                        <Bot className="w-5 h-5" />
+                      ) : (
+                        <Hash className="w-5 h-5" />
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(conversation.timestamp)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <p className={`text-sm truncate mb-1 ${
-                    activeConversation === conversation.id 
-                      ? 'text-sidebar-text-active/70' 
-                      : 'text-muted-foreground'
-                  }`}>
-                    {conversation.lastMessage}
-                  </p>
+                    </AvatarFallback>
+                  </Avatar>
 
-                  {/* URL Preview */}
-                  {conversation.endpointSettings.url && (
-                    <div className="text-xs text-muted-foreground/60 truncate">
-                      <code className="bg-sidebar-bg px-1 rounded">
-                        {conversation.endpointSettings.method} {conversation.endpointSettings.url}
-                      </code>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className={`font-medium truncate ${
+                        activeConversation === conversation.id 
+                          ? 'text-sidebar-text-active' 
+                          : 'text-foreground group-hover:text-foreground'
+                      }`}>
+                        {conversation.title}
+                      </h3>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {conversation.unread > 0 && (
+                          <Badge className="bg-destructive text-destructive-foreground text-xs px-2">
+                            {conversation.unread}
+                          </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(conversation.timestamp)}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                    
+                    <p className={`text-sm truncate mb-1 ${
+                      activeConversation === conversation.id 
+                        ? 'text-sidebar-text-active/70' 
+                        : 'text-muted-foreground'
+                    }`}>
+                      {conversation.lastMessage}
+                    </p>
+
+                    {/* URL Preview */}
+                    {conversation.endpointSettings.url && (
+                      <div className="text-xs text-muted-foreground/60 truncate">
+                        <code className="bg-sidebar-bg px-1 rounded">
+                          {conversation.endpointSettings.method} {conversation.endpointSettings.url}
+                        </code>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </div>
       </ScrollArea>
 
