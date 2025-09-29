@@ -328,7 +328,7 @@ const ApiTester = () => {
       )}
 
       {/* Left Sidebar - Conversations */}
-      <div className={`transition-all duration-300 relative ${leftSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
+      <div className={`transition-all duration-300 relative ${leftSidebarOpen ? 'w-fit min-w-80 max-w-96' : 'w-0'} overflow-hidden border-r border-border`}>
         {leftSidebarOpen && (
           <>
             <ConversationSidebar
@@ -353,9 +353,9 @@ const ApiTester = () => {
               variant="ghost"
               size="icon"
               onClick={() => setLeftSidebarOpen(false)}
-              className="absolute top-4 right-2 z-10 bg-transparent hover:bg-sidebar-hover"
+              className="absolute top-2 right-2 z-10 bg-card/80 backdrop-blur-sm hover:bg-card border border-border/50 shadow-sm"
             >
-              <ChevronLeft className="w-4 h-4 text-sidebar-text" />
+              <ChevronLeft className="w-4 h-4" />
             </Button>
           </>
         )}
@@ -375,7 +375,7 @@ const ApiTester = () => {
               <Bot className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <h2 className="text-xl font-semibold mb-2">Bienvenido al AI Agent Tester</h2>
               <p className="mb-4">Crea una nueva conversación para empezar</p>
-              <Button onClick={createNewConversation} className="bg-primary hover:bg-primary/90">
+              <Button onClick={createNewConversation} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Conversación
               </Button>
@@ -398,7 +398,7 @@ const ApiTester = () => {
 
       {/* Right Sidebar - Configuration */}
       {activeConversationData && (
-        <div className={`transition-all duration-300 relative ${rightSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
+        <div className={`transition-all duration-300 relative ${rightSidebarOpen ? 'w-fit min-w-80 max-w-96' : 'w-0'} overflow-hidden border-l border-border`}>
           {rightSidebarOpen && (
             <>
               <MembersPanel
@@ -411,9 +411,9 @@ const ApiTester = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setRightSidebarOpen(false)}
-                className="absolute top-4 right-2 z-10 bg-transparent hover:bg-members-hover"
+                className="absolute top-2 right-2 z-10 bg-card/80 backdrop-blur-sm hover:bg-card border border-border/50 shadow-sm"
               >
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </>
           )}
