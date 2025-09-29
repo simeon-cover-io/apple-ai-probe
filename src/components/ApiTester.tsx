@@ -3,7 +3,7 @@ import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
 import { MembersPanel } from './MembersPanel';
 import { Button } from '@/components/ui/button';
-import { Bot, Plus } from 'lucide-react';
+import { Bot, Plus, ChevronLeft, ChevronRight, Settings, MessageSquare } from 'lucide-react';
 import { z } from 'zod';
 
 export interface EndpointSettings {
@@ -50,6 +50,8 @@ const ApiTester = () => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
   // Cargar conversaciones desde localStorage al iniciar
   useEffect(() => {
@@ -300,24 +302,50 @@ const ApiTester = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Conversations Sidebar */}
-      <ConversationSidebar
-        activeConversation={activeConversation}
-        onSelectConversation={(id) => setActiveConversation(id)}
-        onCreateConversation={createNewConversation}
-        onRenameConversation={renameConversation}
-        onDeleteConversation={deleteConversation}
-        conversations={conversations.map(conv => ({
-          id: conv.id,
-          title: conv.title,
-          lastMessage: conv.messages[conv.messages.length - 1]?.content || 'Nueva conversación',
-          timestamp: conv.messages[conv.messages.length - 1]?.timestamp || new Date(),
-          unread: 0,
-          type: 'webhook' as const,
-          endpointSettings: conv.endpointSettings
-        }))}
-      />
+    <div className="flex h-screen bg-background relative">
+      {/* Toggle button for left sidebar */}
+      {!leftSidebarOpen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setLeftSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 bg-card/90 backdrop-blur-sm border border-border hover:bg-card shadow-lg"
+        >
+          <MessageSquare className="w-4 h-4" />
+        </Button>
+      )}
+
+      {/* Left Sidebar - Conversations */}
+      <div className={`transition-all duration-300 relative ${leftSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
+        {leftSidebarOpen && (
+          <>
+            <ConversationSidebar
+              activeConversation={activeConversation}
+              onSelectConversation={(id) => setActiveConversation(id)}
+              onCreateConversation={createNewConversation}
+              onRenameConversation={renameConversation}
+              onDeleteConversation={deleteConversation}
+              conversations={conversations.map(conv => ({
+                id: conv.id,
+                title: conv.title,
+                lastMessage: conv.messages[conv.messages.length - 1]?.content || 'Nueva conversación',
+                timestamp: conv.messages[conv.messages.length - 1]?.timestamp || new Date(),
+                unread: 0,
+                type: 'webhook' as const,
+                endpointSettings: conv.endpointSettings
+              }))}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLeftSidebarOpen(false)}
+              className="absolute top-4 right-2 z-10 bg-transparent hover:bg-sidebar-hover"
+            >
+              <ChevronLeft className="w-4 h-4 text-sidebar-text" />
+            </Button>
+          </>
+        )}
+      </div>
 
       {/* Chat Panel */}
       <div className="flex-1 flex flex-col">
@@ -342,14 +370,40 @@ const ApiTester = () => {
         )}
       </div>
 
-      {/* Members Panel */}
+      {/* Toggle button for right sidebar */}
+      {!rightSidebarOpen && activeConversationData && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setRightSidebarOpen(true)}
+          className="fixed top-4 right-4 z-50 bg-card/90 backdrop-blur-sm border border-border hover:bg-card shadow-lg"
+        >
+          <Settings className="w-4 h-4" />
+        </Button>
+      )}
+
+      {/* Right Sidebar - Configuration */}
       {activeConversationData && (
-        <MembersPanel
-          settings={activeConversationData.endpointSettings}
-          onSettingsChange={updateConversationSettings}
-          onExportCurl={() => exportToCurl(activeConversationData)}
-          onImportCurl={importFromCurl}
-        />
+        <div className={`transition-all duration-300 relative ${rightSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
+          {rightSidebarOpen && (
+            <>
+              <MembersPanel
+                settings={activeConversationData.endpointSettings}
+                onSettingsChange={updateConversationSettings}
+                onExportCurl={() => exportToCurl(activeConversationData)}
+                onImportCurl={importFromCurl}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRightSidebarOpen(false)}
+                className="absolute top-4 right-2 z-10 bg-transparent hover:bg-members-hover"
+              >
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
