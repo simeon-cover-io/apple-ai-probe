@@ -29,6 +29,7 @@ export interface ChatMessage {
 interface ConversationData {
   id: string;
   title: string;
+  description: string;
   messages: ChatMessage[];
   endpointSettings: EndpointSettings;
 }
@@ -101,6 +102,7 @@ const ApiTester = () => {
     const newConversation: ConversationData = {
       id: newId,
       title: `Conversación ${conversations.length + 1}`,
+      description: 'Nueva conversación de prueba de API',
       endpointSettings: {
         url: '',
         method: 'POST',
@@ -141,6 +143,16 @@ const ApiTester = () => {
       prev.map(conv => 
         conv.id === id 
           ? { ...conv, title: newTitle }
+          : conv
+      )
+    );
+  };
+
+  const updateConversationDescription = (id: string, newDescription: string) => {
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === id 
+          ? { ...conv, description: newDescription }
           : conv
       )
     );
@@ -324,10 +336,12 @@ const ApiTester = () => {
               onSelectConversation={(id) => setActiveConversation(id)}
               onCreateConversation={createNewConversation}
               onRenameConversation={renameConversation}
+              onUpdateDescription={updateConversationDescription}
               onDeleteConversation={deleteConversation}
               conversations={conversations.map(conv => ({
                 id: conv.id,
                 title: conv.title,
+                description: conv.description,
                 lastMessage: conv.messages[conv.messages.length - 1]?.content || 'Nueva conversación',
                 timestamp: conv.messages[conv.messages.length - 1]?.timestamp || new Date(),
                 unread: 0,

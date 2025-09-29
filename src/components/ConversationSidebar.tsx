@@ -13,6 +13,7 @@ import type { EndpointSettings } from './ApiTester';
 interface Conversation {
   id: string;
   title: string;
+  description: string;
   lastMessage: string;
   timestamp: Date;
   unread: number;
@@ -25,6 +26,7 @@ interface ConversationSidebarProps {
   onSelectConversation: (id: string) => void;
   onCreateConversation: () => void;
   onRenameConversation: (id: string, newTitle: string) => void;
+  onUpdateDescription: (id: string, newDescription: string) => void;
   onDeleteConversation: (id: string) => void;
   conversations: Conversation[];
 }
@@ -34,15 +36,19 @@ export const ConversationSidebar = ({
   onSelectConversation, 
   onCreateConversation, 
   onRenameConversation, 
+  onUpdateDescription,
   onDeleteConversation, 
   conversations 
 }: ConversationSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
+  const [editDescription, setEditDescription] = useState('');
 
   const filteredConversations = conversations.filter(conv =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -63,6 +69,11 @@ export const ConversationSidebar = ({
     setEditTitle(title);
   };
 
+  const handleEditDescription = (id: string, description: string) => {
+    setEditingDescriptionId(id);
+    setEditDescription(description);
+  };
+
   const saveRename = () => {
     if (editingId && editTitle.trim()) {
       onRenameConversation(editingId, editTitle.trim());
@@ -71,9 +82,22 @@ export const ConversationSidebar = ({
     setEditTitle('');
   };
 
+  const saveDescription = () => {
+    if (editingDescriptionId && editDescription.trim()) {
+      onUpdateDescription(editingDescriptionId, editDescription.trim());
+    }
+    setEditingDescriptionId(null);
+    setEditDescription('');
+  };
+
   const cancelRename = () => {
     setEditingId(null);
     setEditTitle('');
+  };
+
+  const cancelEditDescription = () => {
+    setEditingDescriptionId(null);
+    setEditDescription('');
   };
 
   const formatTime = (date: Date) => {
@@ -228,7 +252,83 @@ export const ConversationSidebar = ({
                         : 'text-muted-foreground'
                     }`}>
                       {conversation.lastMessage}
-                    </p>
+                     </p>
+
+                    {/* Description */}
+                    {editingDescriptionId === conversation.id ? (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Input
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveDescription();
+                            if (e.key === 'Escape') cancelEditDescription();
+                          }}
+                          className="h-6 text-xs"
+                          placeholder="Descripción..."
+                          autoFocus
+                        />
+                        <Button size="sm" variant="ghost" onClick={saveDescription} className="h-6 w-6 p-0">
+                          ✓
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditDescription} className="h-6 w-6 p-0">
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <p 
+                        className={`text-xs truncate mb-2 cursor-pointer hover:underline ${
+                          activeConversation === conversation.id 
+                            ? 'text-sidebar-text-active/50' 
+                            : 'text-muted-foreground/60'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditDescription(conversation.id, conversation.description);
+                        }}
+                        title="Haz clic para editar la descripción"
+                      >
+                        {conversation.description}
+                      </p>
+                    )}
+
+                    {/* Description */}
+                    {editingDescriptionId === conversation.id ? (
+                      <div className="flex items-center gap-2 mb-2">
+                        <Input
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveDescription();
+                            if (e.key === 'Escape') cancelEditDescription();
+                          }}
+                          className="h-6 text-xs"
+                          placeholder="Descripción..."
+                          autoFocus
+                        />
+                        <Button size="sm" variant="ghost" onClick={saveDescription} className="h-6 w-6 p-0">
+                          ✓
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditDescription} className="h-6 w-6 p-0">
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <p 
+                        className={`text-xs truncate mb-2 cursor-pointer hover:underline ${
+                          activeConversation === conversation.id 
+                            ? 'text-sidebar-text-active/50' 
+                            : 'text-muted-foreground/60'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditDescription(conversation.id, conversation.description);
+                        }}
+                        title="Haz clic para editar la descripción"
+                      >
+                        {conversation.description}
+                      </p>
+                    )}
 
                     {/* URL Preview */}
                     {conversation.endpointSettings.url && (
