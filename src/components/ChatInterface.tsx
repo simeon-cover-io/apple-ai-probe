@@ -97,11 +97,10 @@ export const ChatInterface = ({ messages, onSendMessage, onClearMessages, isLoad
             <Button
               onClick={onClearMessages}
               variant="ghost"
-              size="sm"
+              size="icon"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Limpiar
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>

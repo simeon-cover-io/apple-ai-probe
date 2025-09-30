@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Settings, Plus, X, Code, Database, Download, Upload, Copy } from 'lucide-react';
+import { Settings, Plus, X, Code, Database, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { EndpointSettings } from './ApiTester';
 
@@ -99,59 +99,18 @@ export const MembersPanel = ({ settings, onSettingsChange, onExportCurl, onImpor
     }
   };
 
-  const members = [
-    { id: '1', name: 'AI Agent', status: 'online', role: 'Bot' },
-    { id: '2', name: 'Webhook Handler', status: 'idle', role: 'Service' },
-  ];
-
   return (
     <div className="w-[480px] bg-members-bg border-l border-border flex flex-col h-full">
-      <Tabs defaultValue="members" className="flex-1 flex flex-col">
-        <div className="border-b border-border">
-          <TabsList className="w-full grid grid-cols-2 rounded-none bg-transparent h-12">
-            <TabsTrigger 
-              value="members" 
-              className="data-[state=active]:bg-sidebar-active data-[state=active]:text-sidebar-text-active"
-            >
-              <Users className="w-4 h-4 mr-1" />
-              Miembros
-            </TabsTrigger>
-            <TabsTrigger 
-              value="config" 
-              className="data-[state=active]:bg-sidebar-active data-[state=active]:text-sidebar-text-active"
-            >
-              <Settings className="w-4 h-4 mr-1" />
-              Config
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="members" className="flex-1 mt-0">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3">Conectados - {members.length}</h3>
-                <div className="space-y-2">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-members-hover transition-colors">
-                      <div className={`w-2 h-2 rounded-full ${
-                        member.status === 'online' ? 'bg-green-500' : 'bg-yellow-500'
-                      }`} />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">{member.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="config" className="flex-1 mt-0">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-6">
+      <div className="border-b border-border px-6 py-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Settings className="w-5 h-5 text-primary" />
+          Configuración
+        </h2>
+      </div>
+      
+      <div className="flex-1">
+        <ScrollArea className="h-full">
+          <div className="p-4 space-y-6">
               {/* Basic Configuration */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -375,10 +334,9 @@ export const MembersPanel = ({ settings, onSettingsChange, onExportCurl, onImpor
                   </div>
                 </>
               )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
