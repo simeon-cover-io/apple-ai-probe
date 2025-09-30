@@ -166,6 +166,18 @@ const ApiTester = () => {
     }
   };
 
+  const clearConversationMessages = () => {
+    if (!activeConversation) return;
+    
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === activeConversation 
+          ? { ...conv, messages: [] }
+          : conv
+      )
+    );
+  };
+
   const exportToCurl = (conversation: ConversationData) => {
     const { endpointSettings } = conversation;
     const headers = Object.entries(endpointSettings.headers)
@@ -364,11 +376,12 @@ const ApiTester = () => {
       {/* Chat Panel */}
       <div className="flex-1 flex flex-col">
         {activeConversationData ? (
-          <ChatInterface
-            messages={activeConversationData.messages}
-            onSendMessage={sendMessage}
-            isLoading={isLoading}
-          />
+            <ChatInterface 
+              messages={activeConversationData.messages}
+              onSendMessage={sendMessage}
+              onClearMessages={clearConversationMessages}
+              isLoading={isLoading}
+            />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-chat-bg">
             <div className="text-center text-muted-foreground">
