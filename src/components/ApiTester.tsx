@@ -3,7 +3,7 @@ import { ConversationSidebar } from './ConversationSidebar';
 import { ChatInterface } from './ChatInterface';
 import { MembersPanel } from './MembersPanel';
 import { Button } from '@/components/ui/button';
-import { Bot, Plus, ChevronLeft, ChevronRight, Settings, MessageSquare } from 'lucide-react';
+import { Bot, Plus, ChevronLeft, ChevronRight, Settings, MessageSquare, Trash2 } from 'lucide-react';
 import { z } from 'zod';
 
 export interface EndpointSettings {
@@ -399,14 +399,27 @@ const ApiTester = () => {
 
       {/* Toggle button for right sidebar */}
       {!rightSidebarOpen && activeConversationData && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setRightSidebarOpen(true)}
-          className="fixed top-4 right-4 z-50 bg-card/90 backdrop-blur-sm border border-border hover:bg-card shadow-lg"
-        >
-          <Settings className="w-4 h-4" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={clearConversationMessages}
+            disabled={activeConversationData.messages.length === 0}
+            className="fixed top-4 right-16 z-50 bg-card/90 backdrop-blur-sm border border-border hover:bg-card shadow-lg disabled:opacity-50"
+            title="Limpiar conversación"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setRightSidebarOpen(true)}
+            className="fixed top-4 right-4 z-50 bg-card/90 backdrop-blur-sm border border-border hover:bg-card shadow-lg"
+            title="Configuración"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </>
       )}
 
       {/* Right Sidebar - Configuration */}
