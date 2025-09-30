@@ -105,7 +105,7 @@ export const MembersPanel = ({ settings, onSettingsChange, onExportCurl, onImpor
   ];
 
   return (
-    <div className="w-80 bg-members-bg border-l border-border flex flex-col h-full">
+    <div className="w-[480px] bg-members-bg border-l border-border flex flex-col h-full">
       <Tabs defaultValue="members" className="flex-1 flex flex-col">
         <div className="border-b border-border">
           <TabsList className="w-full grid grid-cols-2 rounded-none bg-transparent h-12">

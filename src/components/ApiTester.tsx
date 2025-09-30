@@ -398,7 +398,7 @@ const ApiTester = () => {
 
       {/* Right Sidebar - Configuration */}
       {activeConversationData && (
-        <div className={`transition-all duration-300 relative ${rightSidebarOpen ? 'w-fit min-w-80 max-w-96' : 'w-0'} overflow-hidden border-l border-border`}>
+        <div className={`transition-all duration-300 relative ${rightSidebarOpen ? 'w-auto' : 'w-0'} overflow-hidden border-l border-border z-50`}>
           {rightSidebarOpen && (
             <>
               <MembersPanel
