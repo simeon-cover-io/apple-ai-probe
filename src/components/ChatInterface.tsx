@@ -93,16 +93,16 @@ export const ChatInterface = ({ messages, onSendMessage, onClearMessages, isLoad
             </div>
           </div>
           
-          {messages.length > 0 && (
-            <Button
-              onClick={onClearMessages}
-              variant="ghost"
-              size="icon"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
+          <Button
+            onClick={onClearMessages}
+            variant="ghost"
+            size="icon"
+            disabled={messages.length === 0}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            title="Limpiar conversación"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
